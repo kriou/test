@@ -18,7 +18,12 @@ jobs:
           git clone https://github.com/kriou/Box.git third_lib
           cd third_lib
           git checkout main
-          
+
+      - name: Install Buildozer
+        run: |
+          python3 -m pip install --upgrade pip
+          pip3 install buildozer
+
       - name: Cache buildozer env
         uses: actions/cache@v3
         with:
