@@ -1,49 +1,52 @@
-name: Build Python Android APK
+name: Cloud Build Python APK
 on:
   push:
     branches: [ main, master ]
-  workflow_dispatch: # 手动触发
+  workflow_dispatch:
 
 jobs:
-  build:
+  build_apk:
     runs-on: ubuntu-latest
     steps:
-      # 拉取代码
-      - name: Checkout source
+      # 1. 拉取你自己仓库代码
+      - name: Checkout code
         uses: actions/checkout@v4
 
-      # 安装系统依赖（Buildozer必备）
-      - name: Install system dependencies
+      # 新增：直接克隆别人的项目到本地文件夹 third_code
+      - name: Download third-party project
         run: |
-          sudo apt update
-          sudo apt install -y git zip unzip openjdk-17-jdk python3-pip autoconf libtool pkg-config zlib1g-dev libncurses5-dev libncursesw5-dev libtinfo5 cmake libffi-dev libssl-dev
+          # 克隆目标仓库，替换成你要拉的项目地址
+          git clone https://github.com/kriou/Box.git third_code
+          # 切换分支（可选，不需要就删掉这行）
+          cd third_code
+          git checkout main
 
-      # 配置JDK
-      - name: Set JAVA_HOME
-        run: echo "JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64" >> $GITHUB_ENV
+      # 安装系统依赖、buildozer 省略，和之前一致
+      - name: Install system libs
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y git zip unzip openjdk-17-jdk python3-pip autoconf libtool pkg-config zlib1g-dev libncurses5-dev libncursesw5-dev libtinfo5 cmake libffi-dev libssl-dev
+          echo "JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64" >> $GITHUB_ENV
 
-      # 安装Buildozer
-      - name: Install buildozer
+      - name: Install Buildozer
         run: |
           python3 -m pip install --upgrade pip
           pip3 install buildozer
 
-      # 缓存编译依赖，加速下次构建
-      - name: Cache buildozer files
+      - name: Cache buildozer env
         uses: actions/cache@v3
         with:
           path: |
             ~/.buildozer
             ./bin
-          key: ${{ runner.os }}-buildozer-${{ hashFiles('buildozer.spec') }}
+          key: ${{ runner.os }}-bz-${{ hashFiles('buildozer.spec') }}
 
-      # 打包Release APK
-      - name: Build APK
-        run: buildozer android release
+      # 编译APK
+      - name: Build APK in cloud
+        run: buildozer android debug
 
-      # 上传APK到制品，可下载
-      - name: Upload APK artifact
+      - name: Upload compiled APK
         uses: actions/upload-artifact@v4
         with:
-          name: Python-APK
+          name: Output-APK
           path: bin/*.apk
