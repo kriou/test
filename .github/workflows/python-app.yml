@@ -24,6 +24,13 @@ jobs:
           python3 -m pip install --upgrade pip
           pip3 install buildozer
 
+      - name: Accept Android SDK Licenses
+        run: |
+          buildozer android sdk
+          SDK_DIR="$HOME/.buildozer/android/platform/android-sdk"
+          yes | $SDK_DIR/cmdline-tools/latest/bin/sdkmanager --licenses
+          yes | $SDK_DIR/cmdline-tools/latest/bin/sdkmanager "build-tools;37.0.0"
+
       - name: Cache buildozer env
         uses: actions/cache@v3
         with:
