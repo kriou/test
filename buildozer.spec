@@ -11,11 +11,11 @@ source.exclude_dirs = .github,.git
 
 requirements = python3,kivy
 orientation = portrait
-android.permissions = INTERNET
+android.permissions = INTERNET, READ_MEDIA_IMAGES
 
-# 升级API消除商店警告
 android.api = 33
-android.ndk = 26b
+# 改为官方推荐28c，消除NDK版本警告
+android.ndk = 28c
 android.build_tools = "34.0.0"
 android.accept_sdk_license = True
 android.jdk_version = 17
