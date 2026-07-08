@@ -19,12 +19,12 @@ jobs:
           cd third_lib
           git checkout main
 
-      # 3. 安装系统依赖 + 修复 Ubuntu24.04 libtinfo5 缺失
-      - name: Install system libs (fix libtinfo5 missing)
+      # 3. 安装系统依赖 + 修复 Ubuntu24.04 libtinfo5 缺失（核心修复）
+      - name: Install system libs fix libtinfo5
         run: |
           sudo apt-get update -qqy
           sudo apt-get install -qqy git zip unzip openjdk-17-jdk python3-pip autoconf libtool pkg-config zlib1g-dev libncurses-dev cmake libffi-dev libssl-dev
-          # 下载22.04兼容ncurses库
+          # 离线安装22.04兼容ncurses5库
           wget -q https://mirrors.aliyun.com/ubuntu/pool/universe/n/ncurses/libtinfo5_6.3-2ubuntu0.1_amd64.deb
           wget -q https://mirrors.aliyun.com/ubuntu/pool/universe/n/ncurses/libncurses5_6.3-2ubuntu0.1_amd64.deb
           wget -q https://mirrors.aliyun.com/ubuntu/pool/universe/n/ncurses/libncursesw5_6.3-2ubuntu0.1_amd64.deb
@@ -39,25 +39,7 @@ jobs:
           python3 -m pip install --upgrade pip
           pip3 install buildozer
 
-      # 5. 手动安装Android命令行工具、自动同意SDK许可（删除无效buildozer android sdk）
-      - name: Accept Android SDK Licenses
-        run: |
-          SDK_ROOT="$HOME/.buildozer/android/platform/android-sdk"
-          mkdir -p $SDK_ROOT/cmdline-tools/latest
-          cd $SDK_ROOT/cmdline-tools/latest
-          # 下载官方命令行工具
-          wget -q https://dl.google.com/android/repository/commandlinetools-linux-11076708_latest.zip -O cmd.zip
-          unzip -q cmd.zip
-          mv cmdline-tools/* .
-          rm -rf cmd.zip cmdline-tools
-          # 全部同意许可证
-          yes | $SDK_ROOT/cmdline-tools/latest/bin/sdkmanager --licenses
-          # 安装34.0.0构建工具，避开37许可问题
-          yes | $SDK_ROOT/cmdline-tools/latest/bin/sdkmanager "build-tools;34.0.0"
-          # 打印验证
-          ls $SDK_ROOT/build-tools
-
-      # 6. 缓存SDK与编译产物，加速二次构建
+      # 5. 缓存SDK、NDK、编译文件，避免重复下载
       - name: Cache buildozer env
         uses: actions/cache@v3
         with:
@@ -66,13 +48,15 @@ jobs:
             ./bin
           key: ${{ runner.os }}-bz-${{ hashFiles('buildozer.spec') }}
 
-      # 7. 编译APK，开启详细日志+限制Gradle内存防OOM
-      - name: Build APK with verbose log
+      # 6. 打包，开启详细日志，限制Gradle内存防OOM
+      - name: Build APK debug
         env:
           GRADLE_OPTS: "-Xmx2048m -Dorg.gradle.daemon=false"
+          # 自动同意所有Android许可，无交互
+          ANDROID_HOME: $HOME/.buildozer/android/platform/android-sdk
         run: buildozer android debug --verbose
 
-      # 8. 上传编译好的APK
+      # 7. 上传APK
       - name: Upload compiled APK
         uses: actions/upload-artifact@v4
         with:
