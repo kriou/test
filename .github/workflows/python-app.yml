@@ -8,44 +8,30 @@ jobs:
   build_apk:
     runs-on: ubuntu-latest
     steps:
-      # 1. 拉取你自己仓库代码
+      # 拉取代码
       - name: Checkout code
         uses: actions/checkout@v4
 
-      # 新增：直接克隆别人的项目到本地文件夹 third_code
-      - name: Download third-party project
+      # 修复libtinfo5缺失的安装步骤
+      - name: Install system libs (fix libtinfo5 missing)
         run: |
-          # 克隆目标仓库，替换成你要拉的项目地址
-          git clone https://github.com/kriou/Box.git third_code
-          # 切换分支（可选，不需要就删掉这行）
-          cd third_code
-          git checkout main
+          sudo apt-get update -qqy
+          sudo apt-get install -qqy git zip unzip openjdk-17-jdk python3-pip autoconf libtool pkg-config zlib1g-dev libncurses-dev cmake libffi-dev libssl-dev
+          wget -q http://security.ubuntu.com/ubuntu/pool/universe/n/ncurses/libtinfo5_6.3-2ubuntu0.1_amd64.deb
+          wget -q http://security.ubuntu.com/ubuntu/pool/universe/n/ncurses/libncurses5_6.3-2ubuntu0.1_amd64.deb
+          wget -q http://security.ubuntu.com/ubuntu/pool/universe/n/ncurses/libncursesw5_6.3-2ubuntu0.1_amd64.deb
+          sudo dpkg -i libtinfo5_*.deb libncurses5_*.deb libncursesw5_*.deb
+          sudo apt-get -f install -qqy
+          sudo ldconfig
+          echo "JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64" >> $GITHUB_ENV
 
-      # 安装系统依赖、buildozer 省略，和之前一致
-      - name: Install system libs (fix missing libtinfo5)
-      run: |
-        # 使用稳定 apt-get，静默无交互
-        sudo apt-get update -qqy
-        # 先安装新版 ncurses6 基础库
-        sudo apt-get install -qqy git zip unzip openjdk-17-jdk python3-pip autoconf libtool pkg-config zlib1g-dev libncurses-dev cmake libffi-dev libssl-dev
-        # 手动下载 Ubuntu22.04 的 libtinfo5 兼容包
-        wget -q http://security.ubuntu.com/ubuntu/pool/universe/n/ncurses/libtinfo5_6.3-2ubuntu0.1_amd64.deb
-        wget -q http://security.ubuntu.com/ubuntu/pool/universe/n/ncurses/libncurses5_6.3-2ubuntu0.1_amd64.deb
-        wget -q http://security.ubuntu.com/ubuntu/pool/universe/n/ncurses/libncursesw5_6.3-2ubuntu0.1_amd64.deb
-        # 安装离线deb包
-        sudo dpkg -i libtinfo5_*.deb libncurses5_*.deb libncursesw5_*.deb
-        # 修复依赖缺失
-        sudo apt-get -f install -qqy
-        # 刷新动态链接缓存
-        sudo ldconfig
-        # 配置Java环境变量
-        echo "JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64" >> $GITHUB_ENV
-
+      # 安装buildozer
       - name: Install Buildozer
         run: |
           python3 -m pip install --upgrade pip
           pip3 install buildozer
 
+      # 缓存编译环境
       - name: Cache buildozer env
         uses: actions/cache@v3
         with:
@@ -54,10 +40,11 @@ jobs:
             ./bin
           key: ${{ runner.os }}-bz-${{ hashFiles('buildozer.spec') }}
 
-      # 编译APK
+      # 云端编译APK
       - name: Build APK in cloud
         run: buildozer android debug
 
+      # 上传APK
       - name: Upload compiled APK
         uses: actions/upload-artifact@v4
         with:
