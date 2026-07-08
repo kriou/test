@@ -28,9 +28,7 @@ jobs:
           key: ${{ runner.os }}-bz-${{ hashFiles('buildozer.spec') }}
 
       - name: Build APK with verbose log
-        env:
-          GRADLE_OPTS: "-Xmx2048m -Dorg.gradle.daemon=false"
-        run: buildozer android debug --verbose
+        run: buildozer android debug
 
       - name: Upload compiled APK
         uses: actions/upload-artifact@v4
