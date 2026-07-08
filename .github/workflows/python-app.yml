@@ -8,30 +8,29 @@ jobs:
   build_apk:
     runs-on: ubuntu-latest
     steps:
-      # 拉取代码
       - name: Checkout code
         uses: actions/checkout@v4
 
-      # 修复libtinfo5缺失的安装步骤
-      - name: Install system libs (fix libtinfo5 missing)
+      # 修复libtinfo5核心步骤
+      - name: Install system dependencies & fix libtinfo5 missing
         run: |
           sudo apt-get update -qqy
           sudo apt-get install -qqy git zip unzip openjdk-17-jdk python3-pip autoconf libtool pkg-config zlib1g-dev libncurses-dev cmake libffi-dev libssl-dev
-          wget -q http://security.ubuntu.com/ubuntu/pool/universe/n/ncurses/libtinfo5_6.3-2ubuntu0.1_amd64.deb
-          wget -q http://security.ubuntu.com/ubuntu/pool/universe/n/ncurses/libncurses5_6.3-2ubuntu0.1_amd64.deb
-          wget -q http://security.ubuntu.com/ubuntu/pool/universe/n/ncurses/libncursesw5_6.3-2ubuntu0.1_amd64.deb
+          wget -q https://mirrors.aliyun.com/ubuntu/pool/universe/n/ncurses/libtinfo5_6.3-2ubuntu0.1_amd64.deb
+          wget -q https://mirrors.aliyun.com/ubuntu/pool/universe/n/ncurses/libncurses5_6.3-2ubuntu0.1_amd64.deb
+          wget -q https://mirrors.aliyun.com/ubuntu/pool/universe/n/ncurses/libncursesw5_6.3-2ubuntu0.1_amd64.deb
           sudo dpkg -i libtinfo5_*.deb libncurses5_*.deb libncursesw5_*.deb
           sudo apt-get -f install -qqy
           sudo ldconfig
           echo "JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64" >> $GITHUB_ENV
+          ls /usr/lib/x86_64-linux-gnu/libtinfo.so*
+          ldconfig -p | grep tinfo
 
-      # 安装buildozer
       - name: Install Buildozer
         run: |
           python3 -m pip install --upgrade pip
           pip3 install buildozer
 
-      # 缓存编译环境
       - name: Cache buildozer env
         uses: actions/cache@v3
         with:
@@ -40,13 +39,11 @@ jobs:
             ./bin
           key: ${{ runner.os }}-bz-${{ hashFiles('buildozer.spec') }}
 
-      # 云端编译APK
-      - name: Build APK in cloud
+      - name: Build APK with verbose log
         env:
           GRADLE_OPTS: "-Xmx2048m -Dorg.gradle.daemon=false"
         run: buildozer android debug --verbose
 
-      # 上传APK
       - name: Upload compiled APK
         uses: actions/upload-artifact@v4
         with:
