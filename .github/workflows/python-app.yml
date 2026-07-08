@@ -12,22 +12,20 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      # 2. 拉取第三方代码文件夹 third_lib
+      # 2. 拉取第三方代码 third_lib
       - name: Pull third-party source code
         run: |
           git clone https://github.com/kriou/Box.git third_lib
           cd third_lib
           git checkout main
 
-      # 【已完整删除 apt-get 系统依赖安装步骤】
-
-      # 4. 安装 Buildozer
+      # 4. 安装buildozer
       - name: Install Buildozer
         run: |
           python3 -m pip install --upgrade pip
           pip3 install buildozer
 
-      # 5. 缓存SDK/NDK
+      # 5. 缓存SDK/NDK，避免重复下载
       - name: Cache buildozer env
         uses: actions/cache@v3
         with:
@@ -36,19 +34,13 @@ jobs:
             ./bin
           key: ${{ runner.os }}-bz-${{ hashFiles('buildozer.spec') }}
 
-      # 调试打印SDK状态
-      - name: Debug SDK status
-        run: |
-          SDK="$HOME/.buildozer/android/platform/android-sdk"
-          echo "SDK Path: $SDK"
-          ls -la $SDK/build-tools || echo "build-tools不存在"
-
-      # 编译
+      # 6. 打包，开启详细日志，限制Gradle内存防OOM
       - name: Build APK debug
         env:
           GRADLE_OPTS: "-Xmx2048m -Dorg.gradle.daemon=false"
-        run: buildozer android debug --verbose --log-level 2
+        run: buildozer android debug
 
+      # 7. 上传APK产物
       - name: Upload compiled APK
         uses: actions/upload-artifact@v4
         with:
