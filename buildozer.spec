@@ -1,21 +1,19 @@
 [app]
-title = 整合第三方代码
-package.name = myapp
-package.domain = com.demo
+title = PythonDemo
+package.name = pydemo
+package.domain = org.demo
 version = 1.0
 
-# 源码根目录为项目根目录
 source.dir = .
-# 强制打包 third_lib 整个文件夹
 source.include_dirs = third_lib
-# 需要打包的文件后缀
-source.include_exts = py,png,jpg,kv,json,txt,java
+source.include_exts = py,png,jpg,kv,json,txt
+source.exclude_dirs = .github,.git
 
-# 排除不需要的目录（可选）
-source.exclude_dirs = .github,.git,tests
-
+requirements = python3,kivy
 orientation = portrait
 android.permissions = INTERNET
+
 android.api = 24
 android.ndk = 25b
+android.build_tools = "34.0.0"
 android.jdk_version = 17
