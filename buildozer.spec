@@ -1,7 +1,7 @@
 [app]
-title = PythonDemo
-package.name = pydemo
-package.domain = org.demo
+title = TestApp
+package.name = testapp
+package.domain = com.test
 version = 1.0
 
 source.dir = .
