@@ -13,8 +13,9 @@ requirements = python3,kivy
 orientation = portrait
 android.permissions = INTERNET
 
-android.api = 24
-android.ndk = 25b
+# 升级API消除商店警告
+android.api = 33
+android.ndk = 26b
 android.build_tools = "34.0.0"
 android.accept_sdk_license = True
 android.jdk_version = 17
