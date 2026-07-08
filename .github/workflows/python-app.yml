@@ -19,20 +19,6 @@ jobs:
           cd third_lib
           git checkout main
 
-      # 3. 安装系统依赖 + 修复 Ubuntu24.04 libtinfo5 缺失（核心修复）
-      - name: Install system libs fix libtinfo5
-        run: |
-          sudo apt-get update -qqy
-          sudo apt-get install -qqy git zip unzip openjdk-17-jdk python3-pip autoconf libtool pkg-config zlib1g-dev libncurses-dev cmake libffi-dev libssl-dev
-          # 离线安装22.04兼容ncurses5库
-          wget -q https://mirrors.aliyun.com/ubuntu/pool/universe/n/ncurses/libtinfo5_6.3-2ubuntu0.1_amd64.deb
-          wget -q https://mirrors.aliyun.com/ubuntu/pool/universe/n/ncurses/libncurses5_6.3-2ubuntu0.1_amd64.deb
-          wget -q https://mirrors.aliyun.com/ubuntu/pool/universe/n/ncurses/libncursesw5_6.3-2ubuntu0.1_amd64.deb
-          sudo dpkg -i libtinfo5_*.deb libncurses5_*.deb libncursesw5_*.deb
-          sudo apt-get -f install -qqy
-          sudo ldconfig
-          echo "JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64" >> $GITHUB_ENV
-
       # 4. 安装 Buildozer
       - name: Install Buildozer
         run: |
