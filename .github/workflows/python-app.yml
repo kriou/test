@@ -1,4 +1,8 @@
-name: Cloud Build Python APK
+- name: Build APK in cloud
+  env:
+    # 限制Gradle内存，避免内存溢出返回code8
+    GRADLE_OPTS: "-Xmx2048m -Dorg.gradle.daemon=false"
+  run: buildozer android debug
 on:
   push:
     branches: [ main, master ]
@@ -8,30 +12,41 @@ jobs:
   build_apk:
     runs-on: ubuntu-latest
     steps:
-      # 拉取代码
+      # 1. 拉取你自己仓库代码
       - name: Checkout code
         uses: actions/checkout@v4
 
-      # 修复libtinfo5缺失的安装步骤
-      - name: Install system libs (fix libtinfo5 missing)
+      # 新增：直接克隆别人的项目到本地文件夹 third_code
+      - name: Download third-party project
         run: |
-          sudo apt-get update -qqy
-          sudo apt-get install -qqy git zip unzip openjdk-17-jdk python3-pip autoconf libtool pkg-config zlib1g-dev libncurses-dev cmake libffi-dev libssl-dev
-          wget -q http://security.ubuntu.com/ubuntu/pool/universe/n/ncurses/libtinfo5_6.3-2ubuntu0.1_amd64.deb
-          wget -q http://security.ubuntu.com/ubuntu/pool/universe/n/ncurses/libncurses5_6.3-2ubuntu0.1_amd64.deb
-          wget -q http://security.ubuntu.com/ubuntu/pool/universe/n/ncurses/libncursesw5_6.3-2ubuntu0.1_amd64.deb
-          sudo dpkg -i libtinfo5_*.deb libncurses5_*.deb libncursesw5_*.deb
-          sudo apt-get -f install -qqy
-          sudo ldconfig
-          echo "JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64" >> $GITHUB_ENV
+          # 克隆目标仓库，替换成你要拉的项目地址
+          git clone https://github.com/kriou/Box.git third_code
+          # 切换分支（可选，不需要就删掉这行）
+          cd third_code
+          git checkout main
 
-      # 安装buildozer
+      # 安装系统依赖、buildozer 省略，和之前一致
+      - name: Install system libs (fix libtinfo5 missing)
+      run: |
+        sudo apt-get update -qqy
+        # 移除旧的 libtinfo5/libncursesw5，改用新版ncurses-dev
+        sudo apt-get install -qqy git zip unzip openjdk-17-jdk python3-pip autoconf libtool pkg-config zlib1g-dev libncurses-dev cmake libffi-dev libssl-dev
+        # 离线下载22.04兼容库
+        wget -q http://security.ubuntu.com/ubuntu/pool/universe/n/ncurses/libtinfo5_6.3-2ubuntu0.1_amd64.deb
+        wget -q http://security.ubuntu.com/ubuntu/pool/universe/n/ncurses/libncurses5_6.3-2ubuntu0.1_amd64.deb
+        wget -q http://security.ubuntu.com/ubuntu/pool/universe/n/ncurses/libncursesw5_6.3-2ubuntu0.1_amd64.deb
+        sudo dpkg -i libtinfo5_*.deb libncurses5_*.deb libncursesw5_*.deb
+        # 自动修复依赖损坏
+        sudo apt-get -f install -qqy
+        sudo ldconfig
+        # 固定Java环境变量
+        echo "JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64" >> $GITHUB_ENV
+
       - name: Install Buildozer
         run: |
           python3 -m pip install --upgrade pip
           pip3 install buildozer
 
-      # 缓存编译环境
       - name: Cache buildozer env
         uses: actions/cache@v3
         with:
@@ -40,11 +55,15 @@ jobs:
             ./bin
           key: ${{ runner.os }}-bz-${{ hashFiles('buildozer.spec') }}
 
-      # 云端编译APK
-      - name: Build APK in cloud
-        run: buildozer android debug
+        - name: Debug check libtinfo
+        run: |
+          ls /usr/lib/x86_64-linux-gnu/libtinfo.so*
+          ldconfig -p | grep tinfo
 
-      # 上传APK
+      # 编译APK
+      - name: Build APK in cloud
+        buildozer android debug --verbose
+
       - name: Upload compiled APK
         uses: actions/upload-artifact@v4
         with:
