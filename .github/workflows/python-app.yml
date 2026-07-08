@@ -22,11 +22,24 @@ jobs:
           git checkout main
 
       # 安装系统依赖、buildozer 省略，和之前一致
-      - name: Install system libs
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y git zip unzip openjdk-17-jdk python3-pip autoconf libtool pkg-config zlib1g-dev libncurses5-dev libncursesw5-dev libtinfo5 cmake libffi-dev libssl-dev
-          echo "JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64" >> $GITHUB_ENV
+      - name: Install system libs (fix missing libtinfo5)
+      run: |
+        # 使用稳定 apt-get，静默无交互
+        sudo apt-get update -qqy
+        # 先安装新版 ncurses6 基础库
+        sudo apt-get install -qqy git zip unzip openjdk-17-jdk python3-pip autoconf libtool pkg-config zlib1g-dev libncurses-dev cmake libffi-dev libssl-dev
+        # 手动下载 Ubuntu22.04 的 libtinfo5 兼容包
+        wget -q http://security.ubuntu.com/ubuntu/pool/universe/n/ncurses/libtinfo5_6.3-2ubuntu0.1_amd64.deb
+        wget -q http://security.ubuntu.com/ubuntu/pool/universe/n/ncurses/libncurses5_6.3-2ubuntu0.1_amd64.deb
+        wget -q http://security.ubuntu.com/ubuntu/pool/universe/n/ncurses/libncursesw5_6.3-2ubuntu0.1_amd64.deb
+        # 安装离线deb包
+        sudo dpkg -i libtinfo5_*.deb libncurses5_*.deb libncursesw5_*.deb
+        # 修复依赖缺失
+        sudo apt-get -f install -qqy
+        # 刷新动态链接缓存
+        sudo ldconfig
+        # 配置Java环境变量
+        echo "JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64" >> $GITHUB_ENV
 
       - name: Install Buildozer
         run: |
