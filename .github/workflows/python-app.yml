@@ -8,10 +8,18 @@ jobs:
   build_apk:
     runs-on: ubuntu-latest
     steps:
+      # 1. 拉取自身代码
       - name: Checkout code
         uses: actions/checkout@v4
 
-      # 修复libtinfo5核心步骤
+      # 2. 拉取第三方代码文件夹 third_lib
+      - name: Pull third-party source code
+        run: |
+          git clone https://github.com/kriou/Box.git third_lib
+          cd third_lib
+          git checkout main
+
+      # 3. 安装依赖并修复 libtinfo5
       - name: Install system dependencies & fix libtinfo5 missing
         run: |
           sudo apt-get update -qqy
@@ -23,8 +31,6 @@ jobs:
           sudo apt-get -f install -qqy
           sudo ldconfig
           echo "JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64" >> $GITHUB_ENV
-          ls /usr/lib/x86_64-linux-gnu/libtinfo.so*
-          ldconfig -p | grep tinfo
 
       - name: Install Buildozer
         run: |
