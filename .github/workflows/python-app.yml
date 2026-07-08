@@ -8,24 +8,26 @@ jobs:
   build_apk:
     runs-on: ubuntu-latest
     steps:
-      # 1. 拉取自身代码
       - name: Checkout code
         uses: actions/checkout@v4
 
-      # 2. 拉取第三方代码 third_lib
       - name: Pull third-party source code
         run: |
           git clone https://github.com/kriou/Box.git third_lib
           cd third_lib
           git checkout main
 
-      # 4. 安装buildozer
+      # 仅补充pkg-config、libssl-dev，消除openssl pkg-config警告，无其他底层库
+      - name: Install minimal pkg-config & ssl dev
+        run: |
+          sudo apt-get update -qqy
+          sudo apt-get install -qqy pkg-config libssl-dev
+
       - name: Install Buildozer
         run: |
           python3 -m pip install --upgrade pip
           pip3 install buildozer
 
-      # 5. 缓存SDK/NDK，避免重复下载
       - name: Cache buildozer env
         uses: actions/cache@v3
         with:
@@ -34,13 +36,17 @@ jobs:
             ./bin
           key: ${{ runner.os }}-bz-${{ hashFiles('buildozer.spec') }}
 
-      # 6. 打包，开启详细日志，限制Gradle内存防OOM
+      - name: Debug SDK status
+        run: |
+          SDK="$HOME/.buildozer/android/platform/android-sdk"
+          echo "SDK Path: $SDK"
+          ls -la $SDK/build-tools || echo "build-tools不存在"
+
       - name: Build APK debug
         env:
           GRADLE_OPTS: "-Xmx2048m -Dorg.gradle.daemon=false"
-        run: buildozer android debug
+        run: buildozer android debug --verbose --log-level 2
 
-      # 7. 上传APK产物
       - name: Upload compiled APK
         uses: actions/upload-artifact@v4
         with:
