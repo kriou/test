@@ -23,7 +23,7 @@ entrypoint = main.py
 android.accept_sdk_license = True
 android.minapi = 21
 android.api = 33
-android.ndk = 25b
+android.ndk = 28c
 android.ndk_api = 21
 exclude_patterns = **/test/*, **/tests/*
 
