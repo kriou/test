@@ -1,6 +1,6 @@
 name: Build Box Kivy Release APK
 on:
-  workflow_dispatch: # 手动触发打包
+  workflow_dispatch:
 
 permissions:
   contents: write
@@ -22,7 +22,6 @@ jobs:
   build-box-apk:
     runs-on: ubuntu-latest
     steps:
-      # 清空工作目录，拉取 kriou/Box 源码
       - name: Clone Box repository
         run: |
           rm -rf ./*
@@ -30,7 +29,6 @@ jobs:
           echo "==== 拉取源码完成，目录文件 ===="
           ls -la
 
-      # 缓存Python依赖，换回标准v4解决弃用拦截报错
       - name: Cache Python & Buildozer
         uses: actions/cache@v4
         with:
@@ -45,40 +43,33 @@ jobs:
           path: ${{ env.ANDROID_SDK_ROOT }}
           key: android-sdk-global
 
-      # Java17
       - name: Setup Temurin Java 17
         uses: actions/setup-java@v5
         with:
           java-version: '17'
           distribution: 'temurin'
 
-      # Python3.9
       - name: Setup Python 3.9
         uses: actions/setup-python@v6
         with:
           python-version: '3.9'
 
-      # 系统依赖（已修复缩进语法错误）
+      # 已移除libtinfo5，无包冲突
       - name: Install system dependencies
         run: |
           sudo apt-get update -y
-          echo "deb http://archive.ubuntu.com/ubuntu/ jammy main universe" | sudo tee /etc/apt/sources.list.d/jammy.list
-          sudo apt update
-          sudo apt-get install -y libtinfo5
           sudo apt-get install -y \
             git zip unzip curl wget \
             autoconf automake libtool pkg-config cmake \
             zlib1g-dev libncurses5-dev libncursesw5-dev \
             libffi-dev libssl-dev libltdl-dev
 
-      # 安装打包工具
       - name: Install Buildozer / Kivy stack
         run: |
           python -m pip install --upgrade pip setuptools wheel
           pip install cython==0.29.33 buildozer kivy kivymd
           [ -f requirements.txt ] && pip install -r requirements.txt
 
-      # 生成签名密钥
       - name: Generate release keystore
         id: gen_keystore
         run: |
@@ -99,7 +90,6 @@ jobs:
           echo "KEYSTORE_FILE=$PWD/${KEY_NAME}.keystore" >> $GITHUB_ENV
           echo "KEY_ALIAS=${KEY_NAME}" >> $GITHUB_ENV
 
-      # 编译Release APK
       - name: Build Android Release APK
         run: |
           export PATH="$HOME/.local/bin:$PATH"
@@ -112,7 +102,6 @@ jobs:
           buildozer -v android release --no-aab 2>&1 | tee box-build.log
           find . -name "*.apk" -exec cp {} ./ \; || true
 
-      # 校验APK
       - name: Check compiled APK files
         id: verify_build
         run: |
@@ -125,7 +114,6 @@ jobs:
             echo "未找到APK，请查看 box-build.log"
           fi
 
-      # 上传产物
       - name: Upload APK Artifact
         if: steps.verify_build.outputs.BUILD_SUCCESS == 'true'
         uses: actions/upload-artifact@v5
@@ -134,7 +122,6 @@ jobs:
           path: ./*.apk
           retention-days: 30
 
-      # 上传密钥
       - name: Upload generated keystore
         if: steps.gen_keystore.outputs.KEY_CREATED == 'true'
         uses: actions/upload-artifact@v5
@@ -143,7 +130,6 @@ jobs:
           path: ${{ env.KEYSTORE_FILE }}
           retention-days: 1
 
-      # 上传日志
       - name: Upload build log
         if: always()
         uses: actions/upload-artifact@v5
