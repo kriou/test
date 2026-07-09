@@ -1,24 +1,51 @@
 [app]
-title = PythonApp
-package.name = myapp
-package.domain = org.myapp
-version = 1.0
-
+#应用中文名称可直接填写
+title = Box工具
+package.name = boxapp
+#release模式禁止org.test，替换为自定义反向域名
+package.domain = com.box.app
 source.dir = .
-source.include_dirs = third_lib
-source.include_exts = py,png,jpg,kv,json,txt
-source.exclude_dirs = .github,.git
+source.include_exts = py,png,jpg,kv,atlas
+#如需打包图片文件夹取消注释
+#source.include_patterns = image/*
+version = 0.0.1
+#锁定cython0.29.33规避long整型报错
+requirements = python3,kivy,kivymd,libiconv,libffi,cython==0.29.33
 
-requirements = python3,kivy
-orientation = portrait
-android.permissions = INTERNET, READ_MEDIA_IMAGES
+#图标与启动页（有文件再取消注释）
+#icon.filename = icon.png
+#presplash.filename = presplash.png
+#fullscreen = 0
+#orientation = portrait
+entrypoint = main.py
 
-# 消除低API商店警告
-android.api = 33
-# 官方稳定NDK，消除NDK版本警告
-android.ndk = 28c
-# 稳定构建工具，避开37许可坑
-android.build_tools = "34.0.0"
-# CI自动同意SDK许可，根治build-tools文件夹找不到
+#Android SDK编译基础配置
 android.accept_sdk_license = True
-android.jdk_version = 17
+android.minapi = 21
+android.api = 33
+android.ndk = 25b
+android.ndk_api = 21
+exclude_patterns = **/test/*, **/tests/*
+
+#Gradle版本锁定
+android.gradle_download = https://services.gradle.org/distributions/gradle-7.6.4-all.zip
+android.gradle_plugin = 7.4.2
+
+#渲染后端
+p4a.bootstrap = sdl2
+
+#网络权限
+android.permissions = INTERNET
+
+# 关闭自动生成AAB，打包命令配合 --no-aab 输出纯APK
+android.aab = False
+
+# 签名全部注释，由Github Actions环境变量控制，不要写死路径密码
+#android.keystore = xxx.keystore
+#android.keystore_storepass = android
+#android.keystore_keypass = android
+#android.keystore_alias = DomainName.PackageName
+
+[buildozer]
+log_level = 2
+warn_on_root = 1
