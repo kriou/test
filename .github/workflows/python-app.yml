@@ -61,12 +61,16 @@ jobs:
       # 安装系统底层依赖（修复libtinfo5缺失报错）
       - name: Install system dependencies
         run: |
-          sudo apt-get update -y
+           sudo apt-get update -y
+          # 增加jammy源用于安装libtinfo5
+          echo "deb http://archive.ubuntu.com/ubuntu/ jammy main universe" | sudo tee /etc/apt/sources.list.d/jammy.list
+          sudo apt update
+          sudo apt-get install -y libtinfo5
           sudo apt-get install -y \
-            git zip unzip curl wget \
-            autoconf automake libtool pkg-config cmake \
-            zlib1g-dev libncurses5-dev libncursesw5-dev \
-            libffi-dev libssl-dev libltdl-dev libtinfo5
+          git zip unzip curl wget \
+          autoconf automake libtool pkg-config cmake \
+          zlib1g-dev libncurses5-dev libncursesw5-dev \
+          libffi-dev libssl-dev libltdl-dev
 
       # 安装打包工具链
       - name: Install Buildozer / Kivy stack
