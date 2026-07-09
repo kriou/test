@@ -2,13 +2,14 @@
   run: |
     rm -rf ./*
     git clone -b ${{ env.TARGET_BRANCH }} ${{ env.TARGET_REPO }} ./
+    chmod -R 777 .
     ls -la
 
 # 新增生成完整spec
 - name: Generate complete buildozer.spec
   run: |
+    rm -f buildozer.spec
     cat > buildozer.spec <<'END_SPEC'
-
 [app]
 #应用中文名称可直接填写
 title = tvbox
@@ -60,6 +61,8 @@ android.aab = False
 [buildozer]
 log_level = 2
 warn_on_root = 1
-EOF
+END_SPEC
     echo "已生成buildozer.spec"
     cat buildozer.spec
+    # 预校验配置是否完整，提前报错
+    buildozer checkspec
