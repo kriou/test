@@ -64,28 +64,26 @@ jobs:
             zlib1g-dev libncurses5-dev libncursesw5-dev \
             libffi-dev libssl-dev libltdl-dev
 
-      - name: Install Buildozer / Kivy stack
+      - name: Install Cython & Buildozer
         run: |
           python -m pip install --upgrade pip setuptools wheel --no-cache-dir
-          # 使用清华镜像加速，避免国外源超时失败
           export PIP_INDEX_URL=https://pypi.tuna.tsinghua.edu.cn/simple
           export PIP_TRUSTED_HOST=pypi.tuna.tsinghua.edu.cn
-          
-          # 先单独装cython锁定版本
-          pip install cython==0.29.33 --no-cache-dir
-          # 再装buildozer
-          pip install buildozer --no-cache-dir
-          # 最后装kivy、kivymd
-          pip install kivy kivymd --no-cache-dir
-          
-          # 项目依赖
-          [ -f requirements.txt ] && pip install -r requirements.txt --no-cache-dir
-          
-          # 打印版本确认安装成功
-          echo "=== 版本校验 ==="
-          python -m cython --version
+          pip install cython==0.29.33 buildozer --no-cache-dir
+          sudo ln -s ~/.local/bin/buildozer /usr/bin/buildozer
           buildozer --version
-          python -c "import kivy;print('Kivy version:',kivy.__version__)"
+
+      - name: Install Kivy & KivyMD
+        run: |
+          export PIP_INDEX_URL=https://pypi.tuna.tsinghua.edu.cn/simple
+          export PIP_TRUSTED_HOST=pypi.tuna.tsinghua.edu.cn
+          pip install kivy[base] kivymd --only-binary=kivy --no-cache-dir
+          python -c "import kivy;print('Kivy OK')"
+
+      - name: Install project requirements
+        run: |
+          export PIP_INDEX_URL=https://pypi.tuna.tsinghua.edu.cn/simple
+          [ -f requirements.txt ] && pip install -r requirements.txt --no-cache-dir
 
       - name: Generate release keystore
         id: gen_keystore
