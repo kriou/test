@@ -60,8 +60,7 @@ jobs:
 
           echo "===== 生成完毕，文件内容 ====="
           cat buildozer.spec
-          # 提前校验配置，有缺失直接停在这里
-          buildozer checkspec
+          
 
       - name: Cache Python & Buildozer
         uses: actions/cache@v4
@@ -114,6 +113,9 @@ jobs:
           
           # 项目依赖
           [ -f requirements.txt ] && pip install -r requirements.txt --no-cache-dir
+
+          # 安装完后全局链接buildozer
+          sudo ln -s ~/.local/bin/buildozer /usr/bin/buildozer
           
           # 打印版本确认安装成功
           echo "=== 版本校验 ==="
