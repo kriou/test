@@ -1,6 +1,6 @@
 #应用中文名称可直接填写
-title = tvboxtk
-package.name = tvbox
+title = tvbox
+package.name = tk
 #release模式禁止org.test，替换为自定义反向域名
 package.domain = com.github.tvbox.osc.tk
 source.dir = .
