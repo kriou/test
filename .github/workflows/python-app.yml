@@ -26,47 +26,8 @@ jobs:
         run: |
           rm -rf ./*
           git clone -b ${{ env.TARGET_BRANCH }} ${{ env.TARGET_REPO }} ./
-          chmod -R 777 .
           echo "==== 拉取源码完成，目录文件 ===="
           ls -la
-
-      # 【关键新增】克隆完立刻生成合法buildozer.spec
-      - name: Generate complete buildozer.spec
-        run: |
-          rm -f buildozer.spec
-          cat > buildozer.spec <<'END_SPEC'
-[app]
-title = tvbox
-package.name = tvbox
-package.domain = com.github.tvbox.osc.tk
-source.dir = .
-source.include_exts = py,png,jpg,kv,atlas
-version = 0.0.1
-requirements = python3,kivy,kivymd,libiconv,libffi,cython==0.29.33
-entrypoint = main.py
-
-android.accept_sdk_license = True
-android.minapi = 21
-android.api = 34
-android.ndk = 28
-android.ndk_api = 21
-exclude_patterns = **/test/*, **/tests/*
-
-android.gradle_download = https://services.gradle.org/distributions/gradle-7.6.4-all.zip
-android.gradle_plugin = 7.4.2
-
-p4a.bootstrap = sdl2
-android.permissions = INTERNET
-android.aab = False
-
-[buildozer]
-log_level = 2
-warn_on_root = 1
-END_SPEC
-          echo "===== 已生成buildozer.spec，文件内容 ====="
-          cat buildozer.spec
-          # 提前校验配置合法性，提前暴露错误
-          buildozer checkspec
 
       - name: Cache Python & Buildozer
         uses: actions/cache@v4
@@ -93,6 +54,7 @@ END_SPEC
         with:
           python-version: '3.9'
 
+      # 已移除libtinfo5，无包冲突
       - name: Install system dependencies
         run: |
           sudo apt-get update -y
@@ -105,15 +67,21 @@ END_SPEC
       - name: Install Buildozer / Kivy stack
         run: |
           python -m pip install --upgrade pip setuptools wheel --no-cache-dir
+          # 使用清华镜像加速，避免国外源超时失败
           export PIP_INDEX_URL=https://pypi.tuna.tsinghua.edu.cn/simple
           export PIP_TRUSTED_HOST=pypi.tuna.tsinghua.edu.cn
           
+          # 先单独装cython锁定版本
           pip install cython==0.29.33 --no-cache-dir
+          # 再装buildozer
           pip install buildozer --no-cache-dir
+          # 最后装kivy、kivymd
           pip install kivy kivymd --no-cache-dir
           
+          # 项目依赖
           [ -f requirements.txt ] && pip install -r requirements.txt --no-cache-dir
           
+          # 打印版本确认安装成功
           echo "=== 版本校验 ==="
           python -m cython --version
           buildozer --version
