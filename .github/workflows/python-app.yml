@@ -26,8 +26,41 @@ jobs:
         run: |
           rm -rf ./*
           git clone -b ${{ env.TARGET_BRANCH }} ${{ env.TARGET_REPO }} ./
-          echo "==== 拉取源码完成，目录文件 ===="
+          chmod -R 777 .
           ls -la
+      - name: Generate complete buildozer.spec
+        run: |
+          rm -f buildozer.spec
+          echo "[app]" >> buildozer.spec
+          echo "title = tvbox" >> buildozer.spec
+          echo "package.name = tvbox" >> buildozer.spec
+          echo "package.domain = com.github.tvbox.osc.tk" >> buildozer.spec
+          echo "source.dir = ." >> buildozer.spec
+          echo "source.include_exts = py,png,jpg,kv,atlas" >> buildozer.spec
+          echo "version = 0.0.1" >> buildozer.spec
+          echo "requirements = python3,kivy,kivymd,libiconv,libffi,cython==0.29.33" >> buildozer.spec
+          echo "entrypoint = main.py" >> buildozer.spec
+          echo "" >> buildozer.spec
+          echo "android.accept_sdk_license = True" >> buildozer.spec
+          echo "android.minapi = 21" >> buildozer.spec
+          echo "android.api = 34" >> buildozer.spec
+          echo "android.ndk = 28" >> buildozer.spec
+          echo "android.ndk_api = 21" >> buildozer.spec
+          echo "exclude_patterns = **/test/*, **/tests/*" >> buildozer.spec
+          echo "android.gradle_download = https://services.gradle.org/distributions/gradle-7.6.4-all.zip" >> buildozer.spec
+          echo "android.gradle_plugin = 7.4.2" >> buildozer.spec
+          echo "p4a.bootstrap = sdl2" >> buildozer.spec
+          echo "android.permissions = INTERNET" >> buildozer.spec
+          echo "android.aab = False" >> buildozer.spec
+          echo "" >> buildozer.spec
+          echo "[buildozer]" >> buildozer.spec
+          echo "log_level = 2" >> buildozer.spec
+          echo "warn_on_root = 1" >> buildozer.spec
+
+    echo "===== 生成完毕，文件内容 ====="
+    cat buildozer.spec
+    # 提前校验配置，有缺失直接停在这里
+    buildozer checkspec
 
       - name: Cache Python & Buildozer
         uses: actions/cache@v4
