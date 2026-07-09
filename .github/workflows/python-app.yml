@@ -30,9 +30,9 @@ jobs:
           echo "==== 拉取源码完成，目录文件 ===="
           ls -la
 
-      # 缓存SDK与Python依赖，大幅加速二次构建
+      # 缓存Python依赖，换回标准v4解决弃用拦截报错
       - name: Cache Python & Buildozer
-        uses: actions/cache@v4.1.2
+        uses: actions/cache@v4
         with:
           path: |
             ~/.cache/pip
@@ -40,12 +40,12 @@ jobs:
           key: box-py39-buildozer-cache
 
       - name: Cache Android SDK
-        uses: actions/cache@v4.1.2
+        uses: actions/cache@v4
         with:
           path: ${{ env.ANDROID_SDK_ROOT }}
           key: android-sdk-global
 
-      # Java17 环境
+      # Java17
       - name: Setup Temurin Java 17
         uses: actions/setup-java@v5
         with:
@@ -58,11 +58,10 @@ jobs:
         with:
           python-version: '3.9'
 
-      # 安装系统底层依赖（修复libtinfo5缺失报错 + 修复缩进语法错误）
+      # 系统依赖（已修复缩进语法错误）
       - name: Install system dependencies
         run: |
           sudo apt-get update -y
-          # 增加jammy源用于安装libtinfo5
           echo "deb http://archive.ubuntu.com/ubuntu/ jammy main universe" | sudo tee /etc/apt/sources.list.d/jammy.list
           sudo apt update
           sudo apt-get install -y libtinfo5
@@ -72,15 +71,14 @@ jobs:
             zlib1g-dev libncurses5-dev libncursesw5-dev \
             libffi-dev libssl-dev libltdl-dev
 
-      # 安装打包工具链
+      # 安装打包工具
       - name: Install Buildozer / Kivy stack
         run: |
           python -m pip install --upgrade pip setuptools wheel
           pip install cython==0.29.33 buildozer kivy kivymd
-          # 如果项目有requirements.txt自动安装项目依赖
           [ -f requirements.txt ] && pip install -r requirements.txt
 
-      # 自动生成签名密钥（测试用，正式请改用Secrets）
+      # 生成签名密钥
       - name: Generate release keystore
         id: gen_keystore
         run: |
@@ -98,43 +96,36 @@ jobs:
             echo "复用已有密钥文件"
             echo "KEY_CREATED=false" >> $GITHUB_OUTPUT
           fi
-          # 导出签名环境变量
           echo "KEYSTORE_FILE=$PWD/${KEY_NAME}.keystore" >> $GITHUB_ENV
           echo "KEY_ALIAS=${KEY_NAME}" >> $GITHUB_ENV
 
-      # Buildozer 编译 Release 签名APK
+      # 编译Release APK
       - name: Build Android Release APK
         run: |
           export PATH="$HOME/.local/bin:$PATH"
-          # p4a 签名环境变量
           export P4A_RELEASE_KEYSTORE=${{ env.KEYSTORE_FILE }}
           export P4A_RELEASE_KEYALIAS=${{ env.KEY_ALIAS }}
           export P4A_RELEASE_KEYSTORE_PASSWD="android"
           export P4A_RELEASE_KEYALIAS_PASSWD="android"
 
-          # 清理旧构建缓存
           buildozer android clean
-          # 执行打包并输出日志，仅输出APK
           buildozer -v android release --no-aab 2>&1 | tee box-build.log
-
-          # 复制所有apk到根目录方便上传
           find . -name "*.apk" -exec cp {} ./ \; || true
 
-      # 校验是否成功生成安装包
+      # 校验APK
       - name: Check compiled APK files
         id: verify_build
         run: |
           FILE_NUM=$(ls ./*.apk 2>/dev/null | wc -l)
           if [ "$FILE_NUM" -gt 0 ]; then
             echo "BUILD_SUCCESS=true" >> $GITHUB_OUTPUT
-            echo "已生成安装包列表："
             ls -lh ./*.apk
           else
             echo "BUILD_SUCCESS=false" >> $GITHUB_OUTPUT
-            echo "未找到APK，请查看 box-build.log 排查错误"
+            echo "未找到APK，请查看 box-build.log"
           fi
 
-      # 上传成品APK到工作流产物
+      # 上传产物
       - name: Upload APK Artifact
         if: steps.verify_build.outputs.BUILD_SUCCESS == 'true'
         uses: actions/upload-artifact@v5
@@ -143,7 +134,7 @@ jobs:
           path: ./*.apk
           retention-days: 30
 
-      # 首次生成密钥时上传密钥文件
+      # 上传密钥
       - name: Upload generated keystore
         if: steps.gen_keystore.outputs.KEY_CREATED == 'true'
         uses: actions/upload-artifact@v5
@@ -152,7 +143,7 @@ jobs:
           path: ${{ env.KEYSTORE_FILE }}
           retention-days: 1
 
-      # 无论成功失败都上传完整构建日志
+      # 上传日志
       - name: Upload build log
         if: always()
         uses: actions/upload-artifact@v5
