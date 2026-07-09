@@ -32,7 +32,7 @@ jobs:
 
       # 缓存SDK与Python依赖，大幅加速二次构建
       - name: Cache Python & Buildozer
-        uses: actions/cache@v4
+        uses: actions/cache@v4.1.2
         with:
           path: |
             ~/.cache/pip
@@ -40,37 +40,37 @@ jobs:
           key: box-py39-buildozer-cache
 
       - name: Cache Android SDK
-        uses: actions/cache@v4
+        uses: actions/cache@v4.1.2
         with:
           path: ${{ env.ANDROID_SDK_ROOT }}
           key: android-sdk-global
 
       # Java17 环境
       - name: Setup Temurin Java 17
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v5
         with:
           java-version: '17'
           distribution: 'temurin'
 
       # Python3.9
       - name: Setup Python 3.9
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: '3.9'
 
-      # 安装系统底层依赖（修复libtinfo5缺失报错）
+      # 安装系统底层依赖（修复libtinfo5缺失报错 + 修复缩进语法错误）
       - name: Install system dependencies
         run: |
-           sudo apt-get update -y
+          sudo apt-get update -y
           # 增加jammy源用于安装libtinfo5
           echo "deb http://archive.ubuntu.com/ubuntu/ jammy main universe" | sudo tee /etc/apt/sources.list.d/jammy.list
           sudo apt update
           sudo apt-get install -y libtinfo5
           sudo apt-get install -y \
-          git zip unzip curl wget \
-          autoconf automake libtool pkg-config cmake \
-          zlib1g-dev libncurses5-dev libncursesw5-dev \
-          libffi-dev libssl-dev libltdl-dev
+            git zip unzip curl wget \
+            autoconf automake libtool pkg-config cmake \
+            zlib1g-dev libncurses5-dev libncursesw5-dev \
+            libffi-dev libssl-dev libltdl-dev
 
       # 安装打包工具链
       - name: Install Buildozer / Kivy stack
@@ -114,21 +114,21 @@ jobs:
 
           # 清理旧构建缓存
           buildozer android clean
-          # 执行打包并输出日志
+          # 执行打包并输出日志，仅输出APK
           buildozer -v android release --no-aab 2>&1 | tee box-build.log
 
-          # 复制所有apk/aab到根目录方便上传
-          find . -type f \( -name "*.apk" -o -name "*.aab" \) -exec cp {} ./ \; || true
+          # 复制所有apk到根目录方便上传
+          find . -name "*.apk" -exec cp {} ./ \; || true
 
       # 校验是否成功生成安装包
       - name: Check compiled APK files
         id: verify_build
         run: |
-          FILE_NUM=$(ls ./*.apk ./*.aab 2>/dev/null | wc -l)
+          FILE_NUM=$(ls ./*.apk 2>/dev/null | wc -l)
           if [ "$FILE_NUM" -gt 0 ]; then
             echo "BUILD_SUCCESS=true" >> $GITHUB_OUTPUT
             echo "已生成安装包列表："
-            ls -lh ./*.apk ./*.aab
+            ls -lh ./*.apk
           else
             echo "BUILD_SUCCESS=false" >> $GITHUB_OUTPUT
             echo "未找到APK，请查看 box-build.log 排查错误"
@@ -137,16 +137,16 @@ jobs:
       # 上传成品APK到工作流产物
       - name: Upload APK Artifact
         if: steps.verify_build.outputs.BUILD_SUCCESS == 'true'
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: Box-Kivy-Release-APK
-          path: ./*.apk ./*.aab
+          path: ./*.apk
           retention-days: 30
 
       # 首次生成密钥时上传密钥文件
       - name: Upload generated keystore
         if: steps.gen_keystore.outputs.KEY_CREATED == 'true'
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: Box-App-Keystore
           path: ${{ env.KEYSTORE_FILE }}
@@ -155,7 +155,7 @@ jobs:
       # 无论成功失败都上传完整构建日志
       - name: Upload build log
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: Box-Build-Log
           path: box-build.log
