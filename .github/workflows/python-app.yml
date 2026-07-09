@@ -32,7 +32,7 @@ jobs:
 
       # 缓存SDK与Python依赖，大幅加速二次构建
       - name: Cache Python & Buildozer
-        uses: actions/cache@v4
+        uses: actions/cache@v4.1.2
         with:
           path: |
             ~/.cache/pip
@@ -40,14 +40,14 @@ jobs:
           key: box-py39-buildozer-cache
 
       - name: Cache Android SDK
-        uses: actions/cache@v4
+        uses: actions/cache@v4.1.2
         with:
           path: ${{ env.ANDROID_SDK_ROOT }}
           key: android-sdk-global
 
       # Java17 环境
       - name: Setup Temurin Java 17
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v5
         with:
           java-version: '17'
           distribution: 'temurin'
@@ -137,7 +137,7 @@ jobs:
       # 上传成品APK到工作流产物
       - name: Upload APK Artifact
         if: steps.verify_build.outputs.BUILD_SUCCESS == 'true'
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: Box-Kivy-Release-APK
           path: ./*.apk ./*.aab
@@ -146,7 +146,7 @@ jobs:
       # 首次生成密钥时上传密钥文件
       - name: Upload generated keystore
         if: steps.gen_keystore.outputs.KEY_CREATED == 'true'
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: Box-App-Keystore
           path: ${{ env.KEYSTORE_FILE }}
@@ -155,7 +155,7 @@ jobs:
       # 无论成功失败都上传完整构建日志
       - name: Upload build log
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: Box-Build-Log
           path: box-build.log
