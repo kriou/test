@@ -29,6 +29,11 @@ jobs:
           echo "==== 拉取源码完成，目录文件 ===="
           ls -la
 
+      # 新增：自动生成spec文件
+      - name: Generate buildozer.spec automatically
+        run: |
+          cat > buildozer.spec << EOF
+
       - name: Cache Python & Buildozer
         uses: actions/cache@v4
         with:
