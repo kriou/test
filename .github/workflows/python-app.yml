@@ -28,6 +28,7 @@ jobs:
           git clone -b ${{ env.TARGET_BRANCH }} ${{ env.TARGET_REPO }} ./
           chmod -R 777 .
           ls -la
+
       - name: Generate complete buildozer.spec
         run: |
           rm -f buildozer.spec
@@ -57,10 +58,10 @@ jobs:
           echo "log_level = 2" >> buildozer.spec
           echo "warn_on_root = 1" >> buildozer.spec
 
-    echo "===== 生成完毕，文件内容 ====="
-    cat buildozer.spec
-    # 提前校验配置，有缺失直接停在这里
-    buildozer checkspec
+          echo "===== 生成完毕，文件内容 ====="
+          cat buildozer.spec
+          # 提前校验配置，有缺失直接停在这里
+          buildozer checkspec
 
       - name: Cache Python & Buildozer
         uses: actions/cache@v4
