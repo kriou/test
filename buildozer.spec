@@ -1,15 +1,3 @@
-- name: Clone Box repository
-  run: |
-    rm -rf ./*
-    git clone -b ${{ env.TARGET_BRANCH }} ${{ env.TARGET_REPO }} ./
-    chmod -R 777 .
-    ls -la
-
-# 新增生成完整spec
-- name: Generate complete buildozer.spec
-  run: |
-    rm -f buildozer.spec
-    cat > buildozer.spec <<'END_SPEC'
 [app]
 #应用中文名称可直接填写
 title = tvbox
